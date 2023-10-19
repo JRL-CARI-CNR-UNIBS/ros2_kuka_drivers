@@ -55,7 +55,7 @@ public:
   {
     TiXmlDocument doc;
     TiXmlElement * root = new TiXmlElement("Sen");
-    root->SetAttribute("Type", "KROSHU");
+    root->SetAttribute("Type", "ImFree");
     TiXmlElement * el = new TiXmlElement("AK");
     // Add string attribute
     el->SetAttribute("A1", std::to_string(joint_position_correction[0]));
