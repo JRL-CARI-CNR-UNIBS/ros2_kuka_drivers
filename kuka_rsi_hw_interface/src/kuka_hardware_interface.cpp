@@ -50,7 +50,6 @@ namespace kuka_rsi_hw_interface
 CallbackReturn KukaRSIHardwareInterface::on_init(const hardware_interface::HardwareInfo & info)
 {
   if (hardware_interface::SystemInterface::on_init(info) != CallbackReturn::SUCCESS) {
-    RCLCPP_INFO_STREAM(rclcpp::get_logger("KukaRSIHardwareInterface"), "A001");
     return CallbackReturn::ERROR;
   }
 
@@ -97,6 +96,7 @@ CallbackReturn KukaRSIHardwareInterface::on_init(const hardware_interface::Hardw
 
   initial_joint_pos_.resize(info_.joints.size(), 0.0);
   joint_pos_correction_deg_.resize(info_.joints.size(), 0.0);
+
   ipoc_ = 0;
 
   rsi_ip_address_ = info_.hardware_parameters["client_ip"];
@@ -106,7 +106,6 @@ CallbackReturn KukaRSIHardwareInterface::on_init(const hardware_interface::Hardw
     rclcpp::get_logger("KukaRSIHardwareInterface"),
     "IP of client machine: %s:%d", rsi_ip_address_.c_str(), rsi_port_);
 
-  RCLCPP_INFO_STREAM(rclcpp::get_logger("KukaRSIHardwareInterface"), "A006");
   return CallbackReturn::SUCCESS;
 }
 
@@ -150,7 +149,6 @@ CallbackReturn KukaRSIHardwareInterface::on_activate(const rclcpp_lifecycle::Sta
   int bytes = server_->recv(in_buffer_);
   if (bytes == 0) {
     RCLCPP_ERROR(rclcpp::get_logger("KukaRSIHardwareInterface"), "Connection timeout");
-    RCLCPP_INFO_STREAM(rclcpp::get_logger("KukaRSIHardwareInterface"), "A009");
     return CallbackReturn::FAILURE;
   }
 
@@ -163,51 +161,22 @@ CallbackReturn KukaRSIHardwareInterface::on_activate(const rclcpp_lifecycle::Sta
 
   rsi_state_ = RSIState(in_buffer_);
 
-  RCLCPP_INFO_STREAM(rclcpp::get_logger("KukaRSIHardwareInterface"), in_buffer_);
-  RCLCPP_WARN_STREAM(rclcpp::get_logger("KukaRSIHardwareInterface"),
-                     "rsi_state_ position: [" <<
-                      rsi_state_.positions[0] << " " <<
-                      rsi_state_.positions[1] << " " <<
-                      rsi_state_.positions[2] << " " <<
-                      rsi_state_.positions[3] << " " <<
-                      rsi_state_.positions[4] << " " <<
-                      rsi_state_.positions[5] << "]");
-
   for (size_t i = 0; i < info_.joints.size(); ++i) {
     hw_states_[i] = rsi_state_.positions[i] * KukaRSIHardwareInterface::D2R;
     hw_commands_[i] = hw_states_[i];
     initial_joint_pos_[i] = rsi_state_.initial_positions[i] * KukaRSIHardwareInterface::D2R;
   }
+
   ipoc_ = rsi_state_.ipoc;
 
   out_buffer_ = RSICommand(joint_pos_correction_deg_, ipoc_, stop_flag_).xml_doc;
 
-  RCLCPP_ERROR_STREAM(rclcpp::get_logger("KukaRSIHardwareInterface"), out_buffer_);
-
   server_->send(out_buffer_);
   server_->set_timeout(1000);  // Set receive timeout to 1 second
-
-
-  for (size_t im=0; im< 250; im++)
-  {
-      bytes = server_->recv(in_buffer_);
-      rsi_state_ = RSIState(in_buffer_);
-
-      RCLCPP_INFO_STREAM(rclcpp::get_logger("KukaRSIHardwareInterface"), in_buffer_);
-      ipoc_ = rsi_state_.ipoc;
-      out_buffer_.resize(1024);
-      joint_pos_correction_deg_[5]*=-1.0;
-      out_buffer_ = RSICommand(joint_pos_correction_deg_, ipoc_, stop_flag_).xml_doc;
-      server_->send(out_buffer_);
-      RCLCPP_ERROR_STREAM(rclcpp::get_logger("KukaRSIHardwareInterface"), out_buffer_);
-
-      std::this_thread::sleep_for(std::chrono::milliseconds(4));
-  }
 
   RCLCPP_INFO(rclcpp::get_logger("KukaRSIHardwareInterface"), "System Successfully started!");
   is_active_ = true;
 
-  RCLCPP_INFO_STREAM(rclcpp::get_logger("KukaRSIHardwareInterface"), "A010");
   return CallbackReturn::SUCCESS;
 }
 
@@ -227,25 +196,20 @@ return_type KukaRSIHardwareInterface::read(
   in_buffer_.resize(1024);
   if (!is_active_) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
-    RCLCPP_INFO_STREAM(rclcpp::get_logger("KukaRSIHardwareInterface"), "A011");
     return return_type::OK;
   }
 
   if (server_->recv(in_buffer_) == 0) {
     RCLCPP_ERROR(rclcpp::get_logger("KukaRSIHardwareInterface"), "No data received from robot");
     this->on_deactivate(this->get_state());
-    RCLCPP_INFO_STREAM(rclcpp::get_logger("KukaRSIHardwareInterface"), "A012");
     return return_type::ERROR;
   }
   rsi_state_ = RSIState(in_buffer_);
-
-  RCLCPP_WARN_STREAM(rclcpp::get_logger("KukaRSIHardwareInterface"), in_buffer_);
 
   for (std::size_t i = 0; i < info_.joints.size(); ++i) {
     hw_states_[i] = rsi_state_.positions[i] * KukaRSIHardwareInterface::D2R;
   }
   ipoc_ = rsi_state_.ipoc;
-  RCLCPP_INFO_STREAM(rclcpp::get_logger("KukaRSIHardwareInterface"), "A013");
   return return_type::OK;
 }
 
@@ -260,20 +224,10 @@ return_type KukaRSIHardwareInterface::write(
   // First cycle (with 0 ipoc) is handled in the on_activate method, so 0 ipoc means
   //  read was not called yet
   if (!is_active_ || ipoc_ == 0) {
-      RCLCPP_INFO_STREAM(rclcpp::get_logger("KukaRSIHardwareInterface"), "A014");
     return return_type::OK;
   }
 
   if (stop_flag_) {is_active_ = false;}
-
-  RCLCPP_WARN_STREAM(rclcpp::get_logger("KukaRSIHardwareInterface"),
-                     "hw_commands_: [" <<
-                      hw_commands_[0] << " " <<
-                      hw_commands_[1] << " " <<
-                      hw_commands_[2] << " " <<
-                      hw_commands_[3] << " " <<
-                      hw_commands_[4] << " " <<
-                      hw_commands_[5] << "]");
 
   for (size_t i = 0; i < info_.joints.size(); i++) {
     joint_pos_correction_deg_[i] = (hw_commands_[i] - initial_joint_pos_[i]) *
@@ -281,9 +235,7 @@ return_type KukaRSIHardwareInterface::write(
   }
 
   out_buffer_ = RSICommand(joint_pos_correction_deg_, ipoc_, stop_flag_).xml_doc;
-  RCLCPP_ERROR_STREAM(rclcpp::get_logger("KukaRSIHardwareInterface"), out_buffer_);
   server_->send(out_buffer_);
-  RCLCPP_INFO_STREAM(rclcpp::get_logger("KukaRSIHardwareInterface"), "A015");
   return return_type::OK;
 }
 }  // namespace namespace kuka_rsi_hw_interface

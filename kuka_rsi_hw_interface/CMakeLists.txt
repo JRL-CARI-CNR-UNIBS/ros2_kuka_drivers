@@ -19,7 +19,7 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(kroshu_ros2_core REQUIRED)
+#find_package(kroshu_ros2_core REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(controller_manager_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
@@ -44,14 +44,14 @@ target_link_libraries(${PROJECT_NAME} tinyxml)
 
 
 
-add_executable(robot_manager_node
-  src/robot_manager_node.cpp)
-ament_target_dependencies(robot_manager_node rclcpp kroshu_ros2_core sensor_msgs controller_manager_msgs)
-target_link_libraries(robot_manager_node kroshu_ros2_core::communication_helpers)
+#add_executable(robot_manager_node
+#  src/robot_manager_node.cpp)
+#ament_target_dependencies(robot_manager_node rclcpp kroshu_ros2_core sensor_msgs controller_manager_msgs)
+#target_link_libraries(robot_manager_node kroshu_ros2_core::communication_helpers)
 
 pluginlib_export_plugin_description_file(hardware_interface kuka_rsi_hw_interface.xml)
 
-install(TARGETS ${PROJECT_NAME} robot_manager_node
+install(TARGETS ${PROJECT_NAME} # robot_manager_node
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
