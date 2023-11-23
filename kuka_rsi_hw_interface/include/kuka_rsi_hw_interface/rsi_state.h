@@ -96,15 +96,67 @@ public:
     RSol_el->Attribute("A", &initial_cart_position[3]);
     RSol_el->Attribute("B", &initial_cart_position[4]);
     RSol_el->Attribute("C", &initial_cart_position[5]);
+    // Extract joint actual velocity
+    TiXmlElement * Velocity_el = rob->FirstChildElement("Velocity");
+    if (Velocity_el != nullptr)
+    {
+      Velocity_el->Attribute("A1", &velocities[0]);
+      Velocity_el->Attribute("A2", &velocities[1]);
+      Velocity_el->Attribute("A3", &velocities[2]);
+      Velocity_el->Attribute("A4", &velocities[3]);
+      Velocity_el->Attribute("A5", &velocities[4]);
+      Velocity_el->Attribute("A6", &velocities[5]);
+    }
+    // Extract joint actual acceleration
+    TiXmlElement * Acceleration_el = rob->FirstChildElement("Acceleration");
+    if (Acceleration_el != nullptr)
+    {
+      Acceleration_el->Attribute("A1", &accelerations[0]);
+      Acceleration_el->Attribute("A2", &accelerations[1]);
+      Acceleration_el->Attribute("A3", &accelerations[2]);
+      Acceleration_el->Attribute("A4", &accelerations[3]);
+      Acceleration_el->Attribute("A5", &accelerations[4]);
+      Acceleration_el->Attribute("A6", &accelerations[5]);
+    }
+    // Extract joint actual torque
+    TiXmlElement * Torque_el = rob->FirstChildElement("Torque");
+    if (Torque_el != nullptr)
+    {
+      Torque_el->Attribute("A1", &torques[0]);
+      Torque_el->Attribute("A2", &torques[1]);
+      Torque_el->Attribute("A3", &torques[2]);
+      Torque_el->Attribute("A4", &torques[3]);
+      Torque_el->Attribute("A5", &torques[4]);
+      Torque_el->Attribute("A6", &torques[5]);
+    }
+    // Extract joint actual current
+    TiXmlElement * Current_el = rob->FirstChildElement("Current");
+    if (Current_el != nullptr)
+    {
+      Current_el->Attribute("A1", &currents[0]);
+      Current_el->Attribute("A2", &currents[1]);
+      Current_el->Attribute("A3", &currents[2]);
+      Current_el->Attribute("A4", &currents[3]);
+      Current_el->Attribute("A5", &currents[4]);
+      Current_el->Attribute("A6", &currents[5]);
+    }
+    // Get the Delay
+    TiXmlElement * delay_el = rob->FirstChildElement("Delay");
+    delay_el->Attribute("D", &delay);
     // Get the IPOC timestamp
     TiXmlElement * ipoc_el = rob->FirstChildElement("IPOC");
     ipoc = std::stoull(ipoc_el->FirstChild()->Value());
   }
 
   std::vector<double> positions = std::vector<double>(6, 0.0);
+  std::vector<double> velocities = std::vector<double>(6, 0.0);
+  std::vector<double> accelerations = std::vector<double>(6, 0.0);
+  std::vector<double> torques = std::vector<double>(6, 0.0);
+  std::vector<double> currents = std::vector<double>(6, 0.0);
   std::vector<double> initial_positions = std::vector<double>(6, 0.0);
   std::vector<double> cart_position = std::vector<double>(6, 0.0);
   std::vector<double> initial_cart_position = std::vector<double>(6, 0.0);
+  int delay = 0;
   uint64_t ipoc = 0;
 };
 }  // namespace kuka_rsi_hw_interface

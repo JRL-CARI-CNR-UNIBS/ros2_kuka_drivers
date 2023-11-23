@@ -62,6 +62,7 @@
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/state.hpp"
+#include "thread"
 
 #include "pluginlib/class_list_macros.hpp"
 
@@ -98,14 +99,19 @@ public:
   KUKA_RSI_HW_INTERFACE_PUBLIC
   return_type write(const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
+  void rsi_communication();
+
 private:
   bool stop_flag_ = false;
   bool is_active_ = false;
   std::string rsi_ip_address_ = "";
   int rsi_port_ = 0;
 
+  std::map<std::string,std::map<std::string,double>> hw_state_interfaces_;
+  std::map<std::string,std::map<std::string,double>> rsi_state_interfaces_;
+
   std::vector<double> hw_commands_;
-  std::vector<double> hw_states_;
+//  std::vector<double> hw_states_;
 
   // RSI related joint positions
   std::vector<double> initial_joint_pos_;
@@ -117,6 +123,12 @@ private:
   std::unique_ptr<UDPServer> server_;
   std::string in_buffer_;
   std::string out_buffer_;
+
+  std::shared_ptr<std::thread> rsi_communication_thread_;
+  hardware_interface::return_type communication_state_;
+  std::vector<double> rsi_commands_;
+//  std::vector<double> rsi_states_;
+  std::mutex mutex_;
 
   static constexpr double R2D = 180 / M_PI;
   static constexpr double D2R = M_PI / 180;
